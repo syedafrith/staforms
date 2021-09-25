@@ -1,0 +1,1 @@
+web: gunicorn Sta_forms.wsgi --log-file -
