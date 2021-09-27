@@ -14,6 +14,8 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
 
+
+
 class SF_Cloudinary_Bin_Model(models.Model):
     Public_Id = models.CharField(max_length=200)
 
@@ -21,10 +23,16 @@ class SF_Cloudinary_Bin_Model(models.Model):
         destroy(self.Public_Id)
         super(SF_Cloudinary_Bin_Model, self).delete()
 
+class SF_Forms_Settings_Model(models.Model):
+    SF_Forms_Settings_Id = models.BigAutoField(primary_key=True)
+    Is_Quiz = models.BooleanField(default=False)
+    Auto_Correct = models.BooleanField(default=False)
+
 
 
 class SF_Forms_Model(models.Model):
     Form_Id = models.BigAutoField(primary_key=True)
+    Form_Settings_Id = models.OneToOneField(SF_Forms_Settings_Model,on_delete=models.CASCADE,null=True)
     Form_UID = models.TextField(null=True,blank=True)
     Form_Owner = models.ForeignKey(User,on_delete=models.CASCADE)
     Form_Name = models.CharField(max_length=50,default='Untitled')
@@ -34,12 +42,21 @@ class SF_Forms_Model(models.Model):
     class Meta:
         db_table = 'SF_Forms'
 
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        self.Form_Settings_Id = SF_Forms_Settings_Model().save()
+        self.save()
+        new_question=SF_Question_Model().save()
+        SF_Options_Model.objects.create(Question_Id=new_question,Option='option 1')
+        super(SF_Forms_Model,self).save()
+
+
 
 class SF_Question_Model(models.Model):
     Question_Id = models.BigAutoField(primary_key=True)
     Form_Id = models.ForeignKey(SF_Forms_Model,on_delete=models.CASCADE)
-    Question = models.TextField()
-    Question_Type = models.CharField(choices=Question_type_Choices,max_length=30)
+    Question = models.TextField(default='Untitled Question')
+    Question_Type = models.CharField(choices=Question_type_Choices,max_length=30,default='Choices')
     Mark = models.IntegerField()
     Image = CloudinaryField('image')
     Image_Height = models.CharField(max_length=10)
@@ -71,3 +88,10 @@ class SF_Options_Model(models.Model):
 
     class Meta:
         db_table = 'SF_Options'
+
+class SF_Short_And_LongAnswer_Model(models.Model):
+    Short_And_LongAnswer_Id = models.BigAutoField(primary_key=True)
+    Answer_key = models.TextField()
+
+    class Meta:
+        db_table = 'SF_Short_And_LongAnswer'
